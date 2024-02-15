@@ -8,7 +8,7 @@ import sanic, json, httpx, asyncio
 from sanic.exceptions import NotFound
 from pssh.clients import ParallelSSHClient
 
-api_key = 'wMqxdhjyVBp5WtrmsdGwkKPCt2Yjzc'
+api_key = 'dTAu1iOvOfxQ63BZsYQpDqvyHMjeD8itjZ7GTs'
 app = sanic.Sanic(__name__)
 
 class CustomString(str):
