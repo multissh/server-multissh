@@ -1,4 +1,6 @@
 #!/bin/bash
+go mod init main.go
+go mod tidy
 export CGO_ENABLED=0
 echo "Building ssh-client.exe"
 GOOS=windows GOARCH=amd64 go build -o ssh-client.exe
