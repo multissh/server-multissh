@@ -1,4 +1,6 @@
 @echo off
+go mod init main.go
+go mod tidy
 SET CGO_ENABLED=0
 setlocal enabledelayedexpansion
 SET GOOS=windows
