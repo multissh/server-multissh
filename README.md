@@ -10,7 +10,6 @@ This is the backend server for [multissh.github.io](https://multissh.github.io).
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [Ssl](#ssl-certificate-generation)
 - [Build](#build)
 
 ## Installation
@@ -25,12 +24,37 @@ Follow these steps to install and set up the project on your local machine:
    cd server-multissh
    ```
 
-3. **Set up the API key**
+2. **Set up the API key**
 
    The project uses an API key for authentication. Replace the `Api_key` variable in `handler.go` with your actual API key. Rebuilt the ssh-client.
     ```go
     const Api_key = 'dTAu1iOvOfxQ63BZsYQpDqvyHMjeD8itjZ7GTs'
     ```
+3. **Set up the SSL Certificate**
+
+    Run the following command to generate SSL
+    ```sh
+    # example if ssh-client-amd64 in /root
+    # change yourdomain.com
+    apt-get remove certbot
+    python3 -m pip install certbot
+    certbot certonly -d yourdomain.com -d www.yourdomain.com --webroot-path /root
+    openssl crl2pkcs7 -nocrl -certfile /etc/letsencrypt/live/yourdomain.com/fullchain.pem | openssl pkcs7 -print_certs -out /root/cert.crt
+    openssl pkey -in /etc/letsencrypt/live/yourdomain.com/privkey.pem -out /root/private.key
+    ```
+
+    Run the following command to auto-update SSL `At 01:01 on day-of-month 1`
+    ```sh
+    # example if ssh-client-amd64 in /root
+    # change yourdomain.com
+    echo 'certbot renew --dry-run --webroot-path /root' > renew.sh
+    echo 'openssl crl2pkcs7 -nocrl -certfile /etc/letsencrypt/live/yourdomain.com/fullchain.pem | openssl pkcs7 -print_certs -out /root/cert.crt' >> renew.sh
+    echo 'openssl pkey -in /etc/letsencrypt/live/yourdomain.com/privkey.pem -out /root/private.key' >> renew.sh
+    echo 'systemctl restart multissh-server' >> renew.sh
+    chmod +x renew.sh
+    echo '1 1 1 * * root /root/renew.sh > /dev/null' >> /etc/crontab
+    ```
+
 4. **Run the server**
 
     choose for your os environment
@@ -39,21 +63,6 @@ Follow these steps to install and set up the project on your local machine:
     ./ssh-client-arm64   # linux arm64
     ./ssh-client-amd64   # linux amd64
     ```
-
-## SSL Certificate Generation
-This project requires an SSL certificate and key. Follow these steps to generate them:
-
-1. **Generate a private key**
-
-   Run the following command to generate a private key:
-   ```sh
-    openssl genrsa -out private.key 2048
-    openssl req -new -key private.key -out cert.csr
-    openssl x509 -req -days 365 -in cert.csr -signkey private.key -out cert.crt
-   ```
-
-    After generating the certificate and key, place them in the root directory of the project and ensure they are named cert.crt and private.key respectively.
-    Please note that this will generate a self-signed certificate. It's recommended to use a certificate from a trusted certificate authority for production environments.
 
 ## Usage
 
