@@ -30,32 +30,19 @@ Follow these steps to install and set up the project on your local machine:
    cd server-multissh
    ```
 
-2. **Install dependencies**
-    ```sh
-    python3 -m pip install sanic==23.6.0 parallel-ssh==2.5.0 gevent==21.8.0 httpx==0.25.2
-    ```
-    or
-    ```sh
-    python -m pip install sanic==23.6.0 parallel-ssh==2.5.0 gevent==21.8.0 httpx==0.25.2
-    ```
-
 3. **Set up the API key**
-    The project uses an API key for authentication. Replace the `api_key` variable in `app.py` with your actual API key.
-    example :
-    ```py
-    api_key = 'dTAu1iOvOfxQ63BZsYQpDqvyHMjeD8itjZ7GTs'
+
+   The project uses an API key for authentication. Replace the `Api_key` variable in `handler.go` with your actual API key. Rebuilt the ssh-client.
+    ```go
+    const Api_key = 'dTAu1iOvOfxQ63BZsYQpDqvyHMjeD8itjZ7GTs'
     ```
 4. **Run the server**
-    This project consists of two Python scripts that need to be run: `app.py` and `http_redir.py`.
-    ```bash
-    python3 app.py
-    python3 http_redir.py
-    ```
+
     choose for your os environment
-    ```
-    ssh-client.exe
-    ./ssh-client-arm64
-    ./ssh-client-amd64
+    ```sh
+    ssh-client.exe       # windows amd64
+    ./ssh-client-arm64   # linux arm64
+    ./ssh-client-amd64   # linux amd64
     ```
 
 ## SSL Certificate Generation
@@ -80,11 +67,8 @@ Alternatively, you can use `screen` or `systemctl` to manage the server process.
 **Using screen :**
 
 ```sh
-screen -S server-session python3 app.py
-screen -S server-session python3 http_redir.py
+screen -Sdm /root/ssh-client-amd64
 ```
-
-To detach from the screen session, press Ctrl+A followed by D.
 
 **Using systemctl :**
 
@@ -98,7 +82,7 @@ Add the following content to the file:
 Description=MultiSSH Server
 
 [Service]
-ExecStart=/usr/bin/python3 /home/yourusername/server-multissh/app.py
+ExecStart=/root/ssh-client-amd64
 User=yourusername
 Restart=always
 
@@ -107,11 +91,9 @@ WantedBy=multi-user.target
 ```
 Save and close the file, then start the service:
 ```sh
-sudo systemctl start multissh-server
-```
-To enable the service to start on boot:
-```sh
+sudo systemctl daemon-reload
 sudo systemctl enable multissh-server
+sudo systemctl start multissh-server
 ```
 
 ## Build
