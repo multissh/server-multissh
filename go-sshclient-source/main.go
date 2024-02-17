@@ -1,53 +1,61 @@
 package main
 
 import (
-	"flag"
-	"html/template"
-	"io"
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
 )
 
-type TemplateRenderer struct {
-	templates *template.Template
-}
-
-func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
 func main() {
-	bind := flag.String("bind", "0.0.0.0:8443", "bind address")
-	flag.Parse()
+	// init
+	app := echo.New()
 
-	e := echo.New()
+	// handle recovers from panics anywhere
+	app.Use(middleware.Recover())
 
-	e.Renderer = &TemplateRenderer{
-		templates: template.Must(template.ParseGlob("./public/template/*.template")),
-	}
-
-	e.Logger.SetLevel(log.INFO)
-
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	// handle CORS
+	app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"https://multissh.github.io"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
-	e.Static("/", "./public")
+	// static route
+	app.Static("/.well-known", "./.well-known")
 
-	e.GET("/", listTermHandler)
-	e.GET("/term", newTermHandler)
-	e.POST("/term", createTermHandler)
-	e.GET("/term/:id/data", linkTermDataHandler)
-	e.POST("/term/:id/windowsize", setTermWindowSizeHandler)
+	// live ssh route
+	app.GET("/", listTermHandler)
+	app.POST("/term", createTermHandler)
+	app.POST("/term/:id/windowsize", setTermWindowSizeHandler)
+	app.GET("/term/:id/data", linkTermDataHandler)
 
-	e.StartTLS(
-		*bind,
-		"./cert.crt",
-		"./private.key",
-	)
+	// snippet ssh route
+	app.GET("/run", runCmd)
+
+	// config route
+	app.GET("/server", getConfig)
+	app.GET("/snippets", getConfig)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	// start http server
+	go func() {
+		log.Fatal(app.Start(":80"))
+	}()
+
+	// start https server
+	go func() {
+		log.Fatal(app.StartTLS(":443", "./cert.crt", "./private.key"))
+	}()
+
+	// signal to gracefully shutdown the server with a timeout of 10 seconds
+	<-ctx.Done()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	app.Shutdown(ctx)
 }
