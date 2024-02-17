@@ -1,13 +1,8 @@
 # server-multissh
 
 ![Website](https://img.shields.io/website?url=https%3A%2F%2Fmultissh.github.io&up_message=online&down_message=offline&logo=googlechrome&label=demo%20website)
-![Python Version](https://img.shields.io/badge/python-3.9-blue)
-![Go Version](https://img.shields.io/badge/go-1.17-blue)
+![Go Version](https://img.shields.io/badge/go-1.18-blue)
 ![License](https://img.shields.io/github/license/multissh/server-multissh)
-![Sanic](https://img.shields.io/badge/Sanic-23.6.0-blue)
-![ParallelSSH](https://img.shields.io/badge/ParallelSSH-2.5.0-blue)
-![Gevent](https://img.shields.io/badge/Gevent-21.8.0-blue)
-![HTTPX](https://img.shields.io/badge/HTTPX-0.25.2-blue)
 
 This is the backend server for [multissh.github.io](https://multissh.github.io).
 
