@@ -257,27 +257,25 @@ func execCmd(host string, user string, auth string, cmds []string) ([]string, []
 	defer conn.Close()
 	out_msg := []string{}
 	err_msg := []string{}
-	for _, cmd := range cmds {
-		session, err := conn.NewSession()
-		if err != nil {
-			return nil, nil, err
-		}
-		defer session.Close()
-		var stdoutBuf, stderrBuf bytes.Buffer
-		session.Stdout = &stdoutBuf
-		session.Stderr = &stderrBuf
-		err = session.Run(cmd)
-		if err != nil {
-			return nil, nil, err
-		}
-		if stdout := stdoutBuf.String(); stdout != "" {
-			out_msg = append(out_msg, stdout)
-		}
-		if stderr := stderrBuf.String(); stderr != "" {
-			err_msg = append(err_msg, stderr)
-		}
-		session.Close()
+	session, err := conn.NewSession()
+	if err != nil {
+		return nil, nil, err
 	}
+	defer session.Close()
+	var stdoutBuf, stderrBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	session.Stderr = &stderrBuf
+	err = session.Run(strings.Join(cmds, " && "))
+	if err != nil {
+		return nil, nil, err
+	}
+	if stdout := stdoutBuf.String(); stdout != "" {
+		out_msg = append(out_msg, stdout)
+	}
+	if stderr := stderrBuf.String(); stderr != "" {
+		err_msg = append(err_msg, stderr)
+	}
+	session.Close()
 	return out_msg, err_msg, nil
 }
 
