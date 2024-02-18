@@ -225,11 +225,11 @@ func runCmd(c echo.Context) error {
 							websocket.Message.Send(ws, fmt.Sprintf("red;;;%s", err.Error()))
 							return
 						}
-						for x := range o {
-							websocket.Message.Send(ws, fmt.Sprintf("green;;;%s", o[x]))
+						if o != "" {
+							websocket.Message.Send(ws, fmt.Sprintf("green;;;%s", o))
 						}
-						for y := range e {
-							websocket.Message.Send(ws, fmt.Sprintf("yellow;;;%s", e[y]))
+						if e != "" {
+							websocket.Message.Send(ws, fmt.Sprintf("yellow;;;%s", e))
 						}
 					}(i)
 				}
@@ -242,7 +242,7 @@ func runCmd(c echo.Context) error {
 	return nil
 }
 
-func execCmd(host string, user string, auth string, cmds []string) ([]string, []string, error) {
+func execCmd(host string, user string, auth string, cmds []string) (string, string, error) {
 	cfg := &ssh.ClientConfig{
 		User: user,
 		Auth: []ssh.AuthMethod{
@@ -252,28 +252,25 @@ func execCmd(host string, user string, auth string, cmds []string) ([]string, []
 	}
 	conn, err := ssh.Dial("tcp", host, cfg)
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
 	defer conn.Close()
-	out_msg := []string{}
-	err_msg := []string{}
+	out_msg := ""
+	err_msg := ""
 	session, err := conn.NewSession()
 	if err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
 	defer session.Close()
 	var stdoutBuf, stderrBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
 	session.Stderr = &stderrBuf
-	err = session.Run(strings.Join(cmds, " && "))
-	if err != nil {
-		return nil, nil, err
-	}
+	session.Run(strings.Join(cmds, " && "))
 	if stdout := stdoutBuf.String(); stdout != "" {
-		out_msg = append(out_msg, stdout)
+		out_msg = stdout
 	}
 	if stderr := stderrBuf.String(); stderr != "" {
-		err_msg = append(err_msg, stderr)
+		err_msg = stderr
 	}
 	session.Close()
 	return out_msg, err_msg, nil
