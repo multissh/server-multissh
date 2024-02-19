@@ -248,6 +248,7 @@ func execCmd(host string, user string, auth string, cmds []string) (string, stri
 		Auth: []ssh.AuthMethod{
 			ssh.Password(auth),
 		},
+		Timeout:         10 * time.Second,
 		HostKeyCallback: ssh.HostKeyCallback(func(hostname string, remote net.Addr, key ssh.PublicKey) error { return nil }),
 	}
 	conn, err := ssh.Dial("tcp", host, cfg)
@@ -255,25 +256,37 @@ func execCmd(host string, user string, auth string, cmds []string) (string, stri
 		return "", "", err
 	}
 	defer conn.Close()
-	out_msg := ""
-	err_msg := ""
+	var (
+		stdoutBuf, stderrBuf bytes.Buffer
+		out_msg, err_msg     string
+	)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	session, err := conn.NewSession()
 	if err != nil {
 		return "", "", err
 	}
 	defer session.Close()
-	var stdoutBuf, stderrBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
 	session.Stderr = &stderrBuf
-	session.Run(strings.Join(cmds, " && "))
-	if stdout := stdoutBuf.String(); stdout != "" {
-		out_msg = stdout
+	errChan := make(chan error, 1)
+	go func() {
+		errChan <- session.Run(strings.Join(cmds, "; "))
+	}()
+	select {
+	case <-errChan:
+		if stdout := stdoutBuf.String(); len(stdout) > 0 {
+			out_msg = stdout
+		}
+		if stderr := stderrBuf.String(); len(stderr) > 0 {
+			err_msg = stderr
+		}
+		session.Close()
+		return out_msg, err_msg, nil
+	case <-ctx.Done():
+		session.Close()
+		return "", "", errors.New("Error: Timeout Executing cmd!")
 	}
-	if stderr := stderrBuf.String(); stderr != "" {
-		err_msg = stderr
-	}
-	session.Close()
-	return out_msg, err_msg, nil
 }
 
 func fetchData(url string, token string) (string, error) {
