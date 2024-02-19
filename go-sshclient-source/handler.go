@@ -260,7 +260,7 @@ func execCmd(host string, user string, auth string, cmds []string) (string, stri
 		stdoutBuf, stderrBuf bytes.Buffer
 		out_msg, err_msg     string
 	)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	session, err := conn.NewSession()
 	if err != nil {
