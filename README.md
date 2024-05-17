@@ -47,7 +47,7 @@ Follow these steps to install and set up the project on your local machine:
     ```sh
     # example if ssh-client-amd64 in /root
     # change yourdomain.com
-    echo 'certbot renew --dry-run --webroot-path /root' > renew.sh
+    echo 'certbot renew --force-renewal --webroot-path /root' > renew.sh
     echo 'openssl crl2pkcs7 -nocrl -certfile /etc/letsencrypt/live/yourdomain.com/fullchain.pem | openssl pkcs7 -print_certs -out /root/cert.crt' >> renew.sh
     echo 'openssl pkey -in /etc/letsencrypt/live/yourdomain.com/privkey.pem -out /root/private.key' >> renew.sh
     echo 'systemctl restart multissh-server' >> renew.sh
