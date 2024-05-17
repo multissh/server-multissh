@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/ssh"
@@ -200,9 +202,9 @@ func runCmd(c echo.Context) error {
 				cmd_list := []string{}
 				if strings.Contains(cmd, "cus_cmd") {
 					split_cmd := strings.Split(cmd, "\n")
-					cus_cmd := strings.Split(strings.Replace(split_cmd[0], "cus_cmd = ", "", -1), ", ")
+					cus_cmd := strings.Split(strings.Replace(split_cmd[0], "cus_cmd = ", "", -1), "; ")
 					cmd = strings.Join(split_cmd[1:], "\n")
-					for i := 0; i <= len(hosts); i++ {
+					for i := 0; i < len(hosts); i++ {
 						cmd_list = append(cmd_list, strings.Replace(cmd, "cus_cmd", cus_cmd[i], -1))
 					}
 					cmd = strings.Join(cmd_list, "\n")
@@ -260,7 +262,7 @@ func execCmd(host string, user string, auth string, cmds []string) (string, stri
 		stdoutBuf, stderrBuf bytes.Buffer
 		out_msg, err_msg     string
 	)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	session, err := conn.NewSession()
 	if err != nil {
