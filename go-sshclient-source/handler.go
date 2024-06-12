@@ -204,12 +204,11 @@ func runCmd(c echo.Context) error {
 					split_cmd := strings.Split(cmd, "\n")
 					cus_cmd := strings.Split(strings.Replace(split_cmd[0], "cus_cmd = ", "", -1), "; ")
 					cmd = strings.Join(split_cmd[1:], "\n")
-					for i := 0; i < len(hosts); i++ {
-						cmd_list = append(cmd_list, strings.Replace(cmd, "cus_cmd", cus_cmd[i], -1))
+					new_cmd := []string{}
+					for i := 0; i < len(cus_cmd); i++ {
+						new_cmd = append(new_cmd, strings.Replace(cmd, "cus_cmd", cus_cmd[i], -1))
 					}
-					cmd = strings.Join(cmd_list, "\n")
-				} else {
-					cmd_list = strings.Split(cmd, "\n")
+					cmd_list = append(cmd_list, new_cmd...)
 				}
 				var wg sync.WaitGroup
 				for i := range hosts {
@@ -221,7 +220,15 @@ func runCmd(c echo.Context) error {
 						}
 						acc_host := strings.Split(hosts[i], "||")
 						user_pass := strings.Split(acc_host[0], ":")
-						o, e, err := execCmd(acc_host[1], user_pass[0], user_pass[1], cmd_list)
+						var (
+							o, e string
+							err  error
+						)
+						if len(cmd_list) != 0 {
+							o, e, err = execCmd(acc_host[1], user_pass[0], user_pass[1], strings.Split(cmd_list[i], "\n"))
+						} else {
+							o, e, err = execCmd(acc_host[1], user_pass[0], user_pass[1], strings.Split(cmd, "\n"))
+						}
 						websocket.Message.Send(ws, fmt.Sprintf("blue;;;%s~# %s", acc_host[1], cmd))
 						if err != nil {
 							websocket.Message.Send(ws, fmt.Sprintf("red;;;%s", err.Error()))
@@ -287,7 +294,7 @@ func execCmd(host string, user string, auth string, cmds []string) (string, stri
 		return out_msg, err_msg, nil
 	case <-ctx.Done():
 		session.Close()
-		return "", "", errors.New("Error: Timeout Executing cmd!")
+		return "", "", errors.New("error: timeout executing cmd")
 	}
 }
 
@@ -310,5 +317,5 @@ func fetchData(url string, token string) (string, error) {
 		}
 		return string(b), nil
 	}
-	return "", errors.New("error fetch data!")
+	return "", errors.New("error: fetch data")
 }
