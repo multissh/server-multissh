@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-const TermBufferSize = 8192
+const TermBufferSize = 32768
 
 const Api_key = "dTAu1iOvOfxQ63BZsYQpDqvyHMjeD8itjZ7GTs"
 
@@ -66,6 +66,8 @@ func createTermHandler(c echo.Context) error {
 		Port:     req.Port,
 		Username: req.Username,
 		Password: req.Password,
+		Rows:     req.Rows,
+		Cols:     req.Cols,
 	})
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, termErr{err.Error()})
@@ -134,7 +136,7 @@ func linkTermDataHandler(c echo.Context) error {
 				if n == 0 {
 					continue
 				}
-				websocket.Message.Send(ws, string(b[:n]))
+				websocket.Message.Send(ws, b[:n])
 			}
 		}()
 		go func() {
@@ -150,7 +152,7 @@ func linkTermDataHandler(c echo.Context) error {
 				if n == 0 {
 					continue
 				}
-				websocket.Message.Send(ws, string(b[:n]))
+				websocket.Message.Send(ws, b[:n])
 			}
 		}()
 		for {
@@ -226,10 +228,11 @@ func runCmd(c echo.Context) error {
 						)
 						if len(cmd_list) != 0 {
 							o, e, err = execCmd(acc_host[1], user_pass[0], user_pass[1], strings.Split(cmd_list[i], "\n"))
+							websocket.Message.Send(ws, fmt.Sprintf("blue;;;%s~# %s", acc_host[1], cmd_list[i]))
 						} else {
 							o, e, err = execCmd(acc_host[1], user_pass[0], user_pass[1], strings.Split(cmd, "\n"))
+							websocket.Message.Send(ws, fmt.Sprintf("blue;;;%s~# %s", acc_host[1], cmd))
 						}
-						websocket.Message.Send(ws, fmt.Sprintf("blue;;;%s~# %s", acc_host[1], cmd))
 						if err != nil {
 							websocket.Message.Send(ws, fmt.Sprintf("red;;;%s", err.Error()))
 							return
