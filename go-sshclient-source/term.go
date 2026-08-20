@@ -28,10 +28,8 @@ func (t *TermLink) Dial(user, pwd string) error {
 	if err != nil {
 		return err
 	}
-
 	t.conn = c
 	t.User = user
-
 	return nil
 }
 
@@ -44,43 +42,37 @@ func (t *TermLink) NewTerm(rows, cols int) (*Term, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	stdout, err := s.StdoutPipe()
 	if err != nil {
 		s.Close()
 		return nil, err
 	}
-
 	stderr, err := s.StderrPipe()
 	if err != nil {
 		s.Close()
 		return nil, err
 	}
-
 	stdin, err := s.StdinPipe()
 	if err != nil {
 		s.Close()
 		return nil, err
 	}
-
-	// Request pseudo terminal
-	err = s.RequestPty("xterm", rows, cols, ssh.TerminalModes{
+	err = s.RequestPty("xterm-256color", rows, cols, ssh.TerminalModes{
 		ssh.ECHO: 1, // disable echoing
+		ssh.TTY_OP_ISPEED: 14400,
+    	ssh.TTY_OP_OSPEED: 14400,
 	})
 	if err != nil {
 		stdin.Close()
 		s.Close()
 		return nil, err
 	}
-
-	// Start remote shell
 	err = s.Shell()
 	if err != nil {
 		stdin.Close()
 		s.Close()
 		return nil, err
 	}
-
 	return &Term{
 		Id:     xid.New().String(),
 		Type:   "xterm",
